@@ -29,22 +29,32 @@ export function createObjectNarrowingCheck(variableName: string) {
   return ifExp;
 }
 
+function createVariableTypeAnnotation(typeName: string, optional: boolean) {
+  const type = t.tsTypeReference(t.identifier(typeName));
+  return t.tsTypeAnnotation(
+    optional ? t.tsUnionType([type, t.tsUndefinedKeyword()]) : type
+  );
+}
+
 export function createObjectPropertyCheck(
   objectType: string,
   parentObjectName: string,
   variableName: string,
-  propertyName: string
+  propertyName: string,
+  required: boolean = true
 ) {
   const object = t.identifier(parentObjectName);
   const variable = t.identifier(variableName);
-  variable.typeAnnotation = t.tsTypeAnnotation(
-    t.tsTypeReference(t.identifier(objectType))
-  );
+  variable.typeAnnotation = createVariableTypeAnnotation(objectType, !required);
   const propertyMember = createMemberExpression(object, propertyName);
 
   const variableDecl = t.variableDeclaration("let", [
     t.variableDeclarator(variable),
   ]);
+
+  if (!required) {
+    variableDecl.declarations[0].init = t.identifier("undefined");
+  }
 
   const inCheck = t.binaryExpression(
     "in",
@@ -66,7 +76,7 @@ export function createObjectPropertyCheck(
   const ifExp = t.ifStatement(
     createAndAndTest(inCheck, typeofCheck, notNullCheck),
     createAssignment(variable, callExp),
-    createThrowStatement(`Expected valid ${propertyName}`)
+    required ? createThrowStatement(`Expected valid ${propertyName}`) : null
   );
 
   return [variableDecl, ifExp];
@@ -76,18 +86,21 @@ export function createPrimitivePropertyCheck(
   type: "string" | "number" | "boolean",
   parentObjectName: string,
   variableName: string,
-  propertyName: string
+  propertyName: string,
+  required: boolean = true
 ) {
   const object = t.identifier(parentObjectName);
   const variable = t.identifier(variableName);
-  variable.typeAnnotation = t.tsTypeAnnotation(
-    t.tsTypeReference(t.identifier(type))
-  );
+  variable.typeAnnotation = createVariableTypeAnnotation(type, !required);
   const propertyMember = createMemberExpression(object, propertyName);
 
   const variableDecl = t.variableDeclaration("let", [
     t.variableDeclarator(variable),
   ]);
+
+  if (!required) {
+    variableDecl.declarations[0].init = t.identifier("undefined");
+  }
 
   const inCheck = t.binaryExpression(
     "in",
@@ -100,7 +113,7 @@ export function createPrimitivePropertyCheck(
   const ifExp = t.ifStatement(
     createAndAndTest(inCheck, typeofCheck),
     createAssignment(variable, propertyMember),
-    createThrowStatement(`Expected valid ${propertyName}`)
+    required ? createThrowStatement(`Expected valid ${propertyName}`) : null
   );
 
   return [variableDecl, ifExp];

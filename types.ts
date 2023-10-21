@@ -1,5 +1,6 @@
 interface BaseSchemaProperty {
   name: string;
+  optional?: boolean;
 }
 
 interface PrimitiveSchemaProperty extends BaseSchemaProperty {

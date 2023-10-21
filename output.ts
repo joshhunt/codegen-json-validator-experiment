@@ -3,6 +3,7 @@ interface Hello {
   age: number;
   "foo-bar": number;
   world: World;
+  "wowee-is-optional"?: Wowee;
 }
 
 function parseHello(input: unknown): Hello {
@@ -42,11 +43,21 @@ function parseHello(input: unknown): Hello {
     throw new Error("Expected valid world");
   }
 
+  let p5_woweeisoptional: Wowee | undefined = undefined;
+  if (
+    "wowee-is-optional" in input &&
+    typeof input["wowee-is-optional"] === "object" &&
+    input["wowee-is-optional"] !== null
+  ) {
+    p5_woweeisoptional = parseWowee(input["wowee-is-optional"]);
+  }
+
   return {
     name,
     age,
     ["foo-bar"]: p3_foobar,
     world,
+    ["wowee-is-optional"]: p5_woweeisoptional,
   };
 }
 
@@ -54,6 +65,7 @@ interface World {
   foo: string;
   bar: number;
   baz: boolean;
+  optionalFoo?: string;
 }
 
 function parseWorld(input: unknown): World {
@@ -82,9 +94,45 @@ function parseWorld(input: unknown): World {
     throw new Error("Expected valid baz");
   }
 
+  let optionalFoo: string | undefined = undefined;
+  if ("optionalFoo" in input && typeof input.optionalFoo === "string") {
+    optionalFoo = input.optionalFoo;
+  }
+
   return {
     foo,
     bar,
     baz,
+    optionalFoo,
+  };
+}
+
+interface Wowee {
+  beep: number;
+  boop: boolean;
+}
+
+function parseWowee(input: unknown): Wowee {
+  if (typeof input !== "object" || input === null) {
+    throw new Error("Expected object");
+  }
+
+  let beep: number;
+  if ("beep" in input && typeof input.beep === "number") {
+    beep = input.beep;
+  } else {
+    throw new Error("Expected valid beep");
+  }
+
+  let boop: boolean;
+  if ("boop" in input && typeof input.boop === "boolean") {
+    boop = input.boop;
+  } else {
+    throw new Error("Expected valid boop");
+  }
+
+  return {
+    beep,
+    boop,
   };
 }

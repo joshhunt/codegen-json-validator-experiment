@@ -4,7 +4,6 @@ import {
   toValidIdentifier,
   createPrimitivePropertyCheck,
   createObjectPropertyCheck,
-  typedIdentifier,
   createObjectNarrowingCheck,
   createReturnObject,
   createObjectProperty,
@@ -27,14 +26,16 @@ function createBodyStatementsForProperty(
       property.type,
       INPUT_VARIABLE_NAME,
       variableName,
-      property.name
+      property.name,
+      !property.optional
     );
   } else if (property.type === "object") {
     return createObjectPropertyCheck(
       property.objectTypeName,
       INPUT_VARIABLE_NAME,
       variableName,
-      property.name
+      property.name,
+      !property.optional
     );
   }
 
@@ -114,5 +115,10 @@ function generateTSInterfacePropertyForSchemaProperty(
     ? t.identifier(name)
     : t.stringLiteral(name);
 
-  return t.tsPropertySignature(propetyName, propertyType, null);
+  const propertySig = t.tsPropertySignature(propetyName, propertyType, null);
+  if (property.optional) {
+    propertySig.optional = true;
+  }
+
+  return propertySig;
 }
