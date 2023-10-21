@@ -1,5 +1,4 @@
 import * as t from "@babel/types";
-import { PropertyNameVariableMapping, Schema } from "./types.js";
 
 export function typedIdentifier(
   name: string,
@@ -19,13 +18,9 @@ function createThrowStatement(message: string) {
 export function createObjectNarrowingCheck(variableName: string) {
   const variable = t.identifier(variableName);
 
-  const typeofCheck = t.binaryExpression(
-    "!==",
-    t.unaryExpression("typeof", variable),
-    t.stringLiteral("object")
-  );
+  const typeofCheck = createTypeofExp(variable, "object", "!==");
   const nullCheck = t.binaryExpression("===", variable, t.nullLiteral());
-  const check = t.logicalExpression("||", typeofCheck, nullCheck);
+  const check = createOrTest(typeofCheck, nullCheck);
 
   const throwExp = createThrowStatement("Expected object");
 
@@ -42,6 +37,9 @@ export function createObjectPropertyCheck(
 ) {
   const object = t.identifier(parentObjectName);
   const variable = t.identifier(variableName);
+  variable.typeAnnotation = t.tsTypeAnnotation(
+    t.tsTypeReference(t.identifier(objectType))
+  );
   const propertyMember = createMemberExpression(object, propertyName);
 
   const variableDecl = t.variableDeclaration("let", [
@@ -54,7 +52,11 @@ export function createObjectPropertyCheck(
     object
   );
   const typeofCheck = createTypeofExp(propertyMember, "object");
-  const notNullCheck = t.binaryExpression("!==", variable, t.nullLiteral());
+  const notNullCheck = t.binaryExpression(
+    "!==",
+    propertyMember,
+    t.nullLiteral()
+  );
 
   const parserFunctionName = `parse${objectType}`;
   const callExp = t.callExpression(t.identifier(parserFunctionName), [
@@ -78,6 +80,9 @@ export function createPrimitivePropertyCheck(
 ) {
   const object = t.identifier(parentObjectName);
   const variable = t.identifier(variableName);
+  variable.typeAnnotation = t.tsTypeAnnotation(
+    t.tsTypeReference(t.identifier(type))
+  );
   const propertyMember = createMemberExpression(object, propertyName);
 
   const variableDecl = t.variableDeclaration("let", [
@@ -105,13 +110,21 @@ function createAndAndTest(...conditions: t.Expression[]) {
   return conditions.reduce((acc, curr) => t.logicalExpression("&&", acc, curr));
 }
 
+function createOrTest(...conditions: t.Expression[]) {
+  return conditions.reduce((acc, curr) => t.logicalExpression("||", acc, curr));
+}
+
 function createAssignment(variable: t.Identifier, right: t.Expression) {
   return t.expressionStatement(t.assignmentExpression("=", variable, right));
 }
 
-function createTypeofExp(variable: t.Expression, type: string) {
+function createTypeofExp(
+  variable: t.Expression,
+  type: string,
+  operator: "===" | "!==" = "==="
+) {
   return t.binaryExpression(
-    "===",
+    operator,
     t.unaryExpression("typeof", variable),
     t.stringLiteral(type)
   );
@@ -158,14 +171,40 @@ export function createObjectProperty(
   );
 }
 
-export function createReturnObject(
-  propertyMappings: PropertyNameVariableMapping[]
+export function createReturnObject(properties: t.ObjectProperty[]) {
+  return t.returnStatement(t.objectExpression(properties));
+}
+
+export function createTSInterface(
+  name: string,
+  properties: t.TSPropertySignature[]
 ) {
-  const propertyExpressions = propertyMappings.map(
-    ({ propertyName, variableName }) => {
-      return createObjectProperty(propertyName, variableName);
-    }
+  const tsInterface = t.tsInterfaceDeclaration(
+    t.identifier(name),
+    null,
+    null,
+    t.tsInterfaceBody(properties)
   );
 
-  return t.returnStatement(t.objectExpression(propertyExpressions));
+  return tsInterface;
+}
+
+export function createFunctionWithUnknownArg(
+  fnName: string,
+  argName: string,
+  body: t.Statement[],
+  returnType?: t.TSTypeAnnotation
+) {
+  const args = [
+    typedIdentifier(argName, t.tsTypeAnnotation(t.tsUnknownKeyword())),
+  ];
+
+  const fn = t.functionDeclaration(
+    t.identifier(fnName),
+    args,
+    t.blockStatement(body, [])
+  );
+  fn.returnType = returnType;
+
+  return fn;
 }

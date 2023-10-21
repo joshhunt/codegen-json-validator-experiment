@@ -10,33 +10,33 @@ function parseHello(input: unknown): Hello {
     throw new Error("Expected object");
   }
 
-  let name;
-
+  let name: string;
   if ("name" in input && typeof input.name === "string") {
     name = input.name;
   } else {
     throw new Error("Expected valid name");
   }
 
-  let age;
-
+  let age: number;
   if ("age" in input && typeof input.age === "number") {
     age = input.age;
   } else {
     throw new Error("Expected valid age");
   }
 
-  let p2_foobar;
-
+  let p3_foobar: number;
   if ("foo-bar" in input && typeof input["foo-bar"] === "number") {
-    p2_foobar = input["foo-bar"];
+    p3_foobar = input["foo-bar"];
   } else {
     throw new Error("Expected valid foo-bar");
   }
 
-  let world;
-
-  if ("world" in input && typeof input.world === "object" && world !== null) {
+  let world: World;
+  if (
+    "world" in input &&
+    typeof input.world === "object" &&
+    input.world !== null
+  ) {
     world = parseWorld(input.world);
   } else {
     throw new Error("Expected valid world");
@@ -45,7 +45,7 @@ function parseHello(input: unknown): Hello {
   return {
     name,
     age,
-    ["foo-bar"]: p2_foobar,
+    ["foo-bar"]: p3_foobar,
     world,
   };
 }
@@ -61,24 +61,21 @@ function parseWorld(input: unknown): World {
     throw new Error("Expected object");
   }
 
-  let foo;
-
+  let foo: string;
   if ("foo" in input && typeof input.foo === "string") {
     foo = input.foo;
   } else {
     throw new Error("Expected valid foo");
   }
 
-  let bar;
-
+  let bar: number;
   if ("bar" in input && typeof input.bar === "number") {
     bar = input.bar;
   } else {
     throw new Error("Expected valid bar");
   }
 
-  let baz;
-
+  let baz: boolean;
   if ("baz" in input && typeof input.baz === "boolean") {
     baz = input.baz;
   } else {

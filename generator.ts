@@ -1,5 +1,5 @@
 import * as t from "@babel/types";
-import { Schema, PropertyNameVariableMapping } from "./types.js";
+import { Schema, SchemaProperty } from "./types.js";
 import {
   toValidIdentifier,
   createPrimitivePropertyCheck,
@@ -7,104 +7,112 @@ import {
   typedIdentifier,
   createObjectNarrowingCheck,
   createReturnObject,
+  createObjectProperty,
+  createTSInterface,
+  createFunctionWithUnknownArg,
 } from "./utils.js";
 
 const INPUT_VARIABLE_NAME = "input";
 
+function createBodyStatementsForProperty(
+  property: SchemaProperty,
+  variableName: string
+) {
+  if (
+    property.type === "boolean" ||
+    property.type === "number" ||
+    property.type === "string"
+  ) {
+    return createPrimitivePropertyCheck(
+      property.type,
+      INPUT_VARIABLE_NAME,
+      variableName,
+      property.name
+    );
+  } else if (property.type === "object") {
+    return createObjectPropertyCheck(
+      property.objectTypeName,
+      INPUT_VARIABLE_NAME,
+      variableName,
+      property.name
+    );
+  }
+
+  throw new Error("unknown schema property type");
+}
+
 export function generateFunctionForSchema(
   schema: Schema
 ): [t.TSInterfaceDeclaration, t.FunctionDeclaration] {
-  const propertyChecks: [PropertyNameVariableMapping, t.Statement[]][] =
-    schema.properties.map((property, index) => {
-      const { name, type } = property;
+  const bodyStatements: t.Statement[] = [];
+  const returnObjectProperties: t.ObjectProperty[] = [];
+  const tsInterfaceProperties: t.TSPropertySignature[] = [];
 
-      const variableName = toValidIdentifier(name, index);
-      const propertyName = name;
+  let index = 0;
+  for (const property of schema.properties) {
+    index += 1;
+    const variableName = toValidIdentifier(property.name, index);
 
-      let statements: t.Statement[];
+    //
+    // Create the main narrowing checks for the property
+    const statements = createBodyStatementsForProperty(property, variableName);
+    bodyStatements.push(...statements);
 
-      if (type === "boolean" || type === "number" || type === "string") {
-        statements = createPrimitivePropertyCheck(
-          type,
-          INPUT_VARIABLE_NAME,
-          variableName,
-          propertyName
-        );
-      } else if (type === "object") {
-        statements = createObjectPropertyCheck(
-          property.objectTypeName,
-          INPUT_VARIABLE_NAME,
-          variableName,
-          propertyName
-        );
-      } else {
-        throw new Error("unknown schema property type");
-      }
+    //
+    // Create the property for the return object
+    returnObjectProperties.push(
+      createObjectProperty(property.name, variableName)
+    );
 
-      const val: [PropertyNameVariableMapping, t.Statement[]] = [
-        { variableName, propertyName },
-        statements,
-      ];
-
-      return val;
-    });
+    //
+    // Create the property for the TS interface for the actual type
+    tsInterfaceProperties.push(
+      generateTSInterfacePropertyForSchemaProperty(property)
+    );
+  }
 
   const functionName = `parse${schema.name}`;
 
-  const fn = t.functionDeclaration(
-    t.identifier(functionName),
-    [
-      typedIdentifier(
-        INPUT_VARIABLE_NAME,
-        t.tsTypeAnnotation(t.tsUnknownKeyword())
-      ),
-    ],
-    t.blockStatement(
-      [
-        createObjectNarrowingCheck(INPUT_VARIABLE_NAME),
-        ...propertyChecks.flatMap(([, statements]) => statements),
-        createReturnObject(propertyChecks.map((v) => v[0])),
-      ],
-      []
-    )
-  );
-  fn.returnType = t.tsTypeAnnotation(
+  const fnBody = [
+    createObjectNarrowingCheck(INPUT_VARIABLE_NAME),
+    ...bodyStatements,
+    createReturnObject(returnObjectProperties),
+  ];
+  const fnReturnType = t.tsTypeAnnotation(
     t.tsTypeReference(t.identifier(schema.name))
   );
 
-  const tsInterface = generateTsInterfaceForSchema(schema);
+  const fn = createFunctionWithUnknownArg(
+    functionName,
+    INPUT_VARIABLE_NAME,
+    fnBody,
+    fnReturnType
+  );
+
+  const tsInterface = createTSInterface(schema.name, tsInterfaceProperties);
 
   return [tsInterface, fn];
 }
 
-function generateTsInterfaceForSchema(schema: Schema) {
-  const properties = schema.properties.map((property) => {
-    const { name, type } = property;
+function generateTSInterfacePropertyForSchemaProperty(
+  property: SchemaProperty
+) {
+  const { name, type } = property;
 
-    let propertyType: t.TSTypeAnnotation;
-    if (type === "boolean" || type === "number" || type === "string") {
-      propertyType = t.tsTypeAnnotation(t.tsTypeReference(t.identifier(type)));
-    } else if (type === "object") {
-      propertyType = t.tsTypeAnnotation(
-        t.tsTypeReference(t.identifier(property.objectTypeName))
-      );
-    } else {
-      throw new Error("unknown schema property type");
-    }
+  let propertyType: t.TSTypeAnnotation;
+  if (type === "boolean" || type === "number" || type === "string") {
+    propertyType = t.tsTypeAnnotation(t.tsTypeReference(t.identifier(type)));
+  } else if (type === "object") {
+    propertyType = t.tsTypeAnnotation(
+      t.tsTypeReference(t.identifier(property.objectTypeName))
+    );
+  } else {
+    throw new Error("unknown schema property type");
+  }
 
-    const propetyName = t.isValidIdentifier(name)
-      ? t.identifier(name)
-      : t.stringLiteral(name);
+  const propetyName = t.isValidIdentifier(name)
+    ? t.identifier(name)
+    : t.stringLiteral(name);
 
-    return t.tsPropertySignature(propetyName, propertyType, null);
-  });
-
-  const tsInterface = t.tsInterfaceDeclaration(
-    t.identifier(schema.name),
-    null,
-    null,
-    t.tsInterfaceBody(properties)
-  );
-
-  return tsInterface;
+  return t.tsPropertySignature(propetyName, propertyType, null);
 }

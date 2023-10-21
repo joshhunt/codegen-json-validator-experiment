@@ -1,6 +1,5 @@
 import * as t from "@babel/types";
 import generator from "@babel/generator";
-import * as prettier from "prettier";
 import * as fs from "fs/promises";
 import { Schema } from "./types.js";
 import { formatSourceCode } from "./formatOutput.js";

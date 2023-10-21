@@ -11,15 +11,10 @@ interface ObjectSchemaProperty extends BaseSchemaProperty {
   objectTypeName: string;
 }
 
-type SchemaProperty = PrimitiveSchemaProperty | ObjectSchemaProperty;
+export type SchemaProperty = PrimitiveSchemaProperty | ObjectSchemaProperty;
 
 export interface Schema {
   name: string;
   type: "object";
   properties: SchemaProperty[];
-}
-
-export interface PropertyNameVariableMapping {
-  variableName: string;
-  propertyName: string;
 }
