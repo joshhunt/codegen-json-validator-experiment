@@ -1,0 +1,26 @@
+{
+  "name": "codegen-json-validator-experiment",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "start": "tsx run.ts",
+    "dev": "tsx watch run.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "private",
+  "dependencies": {
+    "@babel/generator": "^7.23.0",
+    "@babel/types": "^7.23.0",
+    "@types/babel__generator": "^7.6.6",
+    "@types/eslint": "^8.44.6",
+    "@types/node": "^20.8.7",
+    "prettier": "^3.0.3",
+    "tsx": "^3.14.0",
+    "typescript": "^5.2.2",
+    "@typescript-eslint/eslint-plugin": "^6.8.0",
+    "@typescript-eslint/parser": "^6.8.0",
+    "eslint": "^8.52.0"
+  }
+}
