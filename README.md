@@ -45,3 +45,10 @@ What's there at the moment:
 
 I would like to benchmark performance against other popular runtime validation libraries, but becuase this generator supports so few types at the moment
 I feel like that would be pretty unfair to the other libraries. Though, it would be interesting if even this limited set of types, the other libraries are faster.
+
+
+---
+
+Similar approaches (that i found after the fact, otherwise i probably woudln't have tried this):
+ - https://typia.io/docs/validators/assert/ basically roughly exactly the same as this (except, with actual features)
+
