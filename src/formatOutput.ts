@@ -16,7 +16,6 @@ export async function formatSourceCode(code: string) {
 
   const prettyCode = await prettier.format(results.output, {
     parser: "babel-ts",
-    printWidth: 100,
   });
 
   return prettyCode;
