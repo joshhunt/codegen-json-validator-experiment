@@ -45,6 +45,10 @@ export function parseHello(input: unknown): Hello {
       input.dateOfBirth instanceof Date
         ? input.dateOfBirth
         : new Date(input.dateOfBirth);
+
+    if (!isNaN(dateOfBirth.getTime())) {
+      throw new Error("Expected dateOfBirth to be a valid date");
+    }
   } else {
     throw new Error("Expected dateOfBirth to be a valid date");
   }
@@ -177,7 +181,13 @@ export function parseWorld(input: unknown): World {
   if ("validDates" in input && Array.isArray(input.validDates)) {
     validDates = input.validDates.map((item: unknown) => {
       if (typeof item === "string" || item instanceof Date) {
-        return item instanceof Date ? item : new Date(item);
+        const temp = item instanceof Date ? item : new Date(item);
+
+        if (!isNaN(temp.getTime())) {
+          throw new Error("Expected temp to be a valid date");
+        }
+
+        return temp;
       } else {
         throw new Error("Expected item to be a valid date");
       }

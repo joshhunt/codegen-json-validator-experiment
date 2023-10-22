@@ -1,18 +1,20 @@
-import {
-  Narrowable,
-  PropertyType,
-  SchemaPropertyDefinition,
-} from "../../../types.js";
+import { Narrowable, PrimitivePropertyType } from "../../../types.js";
 import { createTypeofTest } from "../../../utils.js";
+import BaseSchemaType from "./BaseSchemaType.js";
 
-export const PrimitiveSchemaType: SchemaPropertyDefinition = {
-  name: "Primitive",
+export class PrimitiveSchemaType implements BaseSchemaType {
+  type: PrimitivePropertyType;
+  name: string = "Primitive";
 
-  narrowCheck(variable: Narrowable, type: PropertyType) {
-    return createTypeofTest(variable, type.type);
-  },
+  constructor(type: PrimitivePropertyType) {
+    this.type = type;
+  }
+
+  narrowCheck(variable: Narrowable) {
+    return createTypeofTest(variable, this.type.type);
+  }
 
   cast(variable: Narrowable) {
     return variable;
-  },
-};
+  }
+}

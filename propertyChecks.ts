@@ -5,7 +5,6 @@ import {
   createAssignment,
   createMemberExpression,
   createNullCheck,
-  createOrTest,
   createTSTypeForPropertyType,
   createTypeExpectationThrow,
   createTypedIdentifier,
@@ -13,6 +12,11 @@ import {
   stringifyType,
 } from "./utils.js";
 import { PrimitiveSchemaType } from "./src/schema/types/PrimitiveSchemaType.js";
+import { DateSchemaType } from "./src/schema/types/DateSchemaType.js";
+import { ObjectSchemaType } from "./src/schema/types/ObjectSchemaType.js";
+import { ArraySchemaType } from "./src/schema/types/ArraySchemaType.js";
+import BaseSchemaType from "./src/schema/types/BaseSchemaType.js";
+import generate from "@babel/generator";
 
 type Narrowable = t.Identifier | t.MemberExpression;
 
@@ -38,12 +42,20 @@ export function createPropertyCheck(
     ),
   ]);
 
+  const typeDef = getTypeDef(type);
   const narrowed = createCast(propertyMember, type);
+
+  const consequent: t.Statement[] = [createAssignment(variable, narrowed)];
+
+  if (typeDef.postCastStatement) {
+    const postCheckStatement = typeDef.postCastStatement(variable);
+    consequent.push(postCheckStatement);
+  }
 
   const ifExp = createNarrowingCheck(
     propertyMember,
     type,
-    createAssignment(variable, narrowed),
+    t.blockStatement(consequent),
     required ? createTypeExpectationThrow(propertyName, type) : undefined
   );
 
@@ -81,48 +93,8 @@ function createNarrowingCheck(
     );
   }
 
-  let testExp: t.Expression | undefined = undefined;
-
-  // Handle primitive narrowing
-  if (
-    type.type === "string" ||
-    type.type === "number" ||
-    type.type === "boolean"
-  ) {
-    testExp = PrimitiveSchemaType.narrowCheck(variable, type);
-  }
-
-  // Handle date narrowing.
-  if (type.type === "date") {
-    const stringTypeCheck = createTypeofTest(variable, "string");
-    const dateInstnaceCheck = t.binaryExpression(
-      "instanceof",
-      variable,
-      t.identifier("Date")
-    );
-    testExp = createOrTest(stringTypeCheck, dateInstnaceCheck);
-  }
-
-  // Handle object narrowing
-  if (type.type === "object") {
-    const typeofCheck = createTypeofTest(variable, "object");
-    const notNullCheck = createNullCheck(variable, "!==");
-    testExp = createAndAndTest(typeofCheck, notNullCheck);
-  }
-
-  // Handle array narrowing
-  if (type.type === "array") {
-    testExp = t.callExpression(
-      t.memberExpression(t.identifier("Array"), t.identifier("isArray")),
-      [variable]
-    );
-  }
-
-  if (testExp === undefined) {
-    throw new Error(
-      `Unknown schema type ${stringifyType(type)} to create narrowing check`
-    );
-  }
+  const typeDef = getTypeDef(type);
+  const testExp = typeDef.narrowCheck(variable);
 
   const ifExp = t.ifStatement(
     createAndAndTest(proceedingCheck, testExp),
@@ -134,51 +106,41 @@ function createNarrowingCheck(
 }
 
 function createCast(variable: Narrowable, type: PropertyType) {
-  if (
-    type.type === "string" ||
-    type.type === "number" ||
-    type.type === "boolean"
-  ) {
-    return PrimitiveSchemaType.cast(variable, type);
-  }
-
-  if (type.type === "date") {
-    const instanceofCheck = t.binaryExpression(
-      "instanceof",
-      variable,
-      t.identifier("Date")
-    );
-    const ternery = t.conditionalExpression(
-      instanceofCheck,
-      variable,
-      t.newExpression(t.identifier("Date"), [variable])
-    );
-
-    return ternery;
-  }
-
-  if (type.type === "object") {
-    const parserFunctionName = `parse${type.objectTypeName}`;
-    return t.callExpression(t.identifier(parserFunctionName), [variable]);
-  }
-
-  if (type.type === "array") {
-    return createArrayNarrowingMap(variable, type.valueType);
-  }
-
-  throw new Error(`Unknown schema type ${stringifyType(type)} to cast`);
+  const typeDef = getTypeDef(type);
+  return typeDef.cast(variable);
 }
 
-function createArrayNarrowingMap(
+export function createArrayNarrowingMap(
   variable: Narrowable,
   arrayValueType: PropertyType
 ) {
   const param = createTypedIdentifier(`item`, t.tsUnknownKeyword());
-  const narrowed = createCast(param, arrayValueType);
+
+  const typeDef = getTypeDef(arrayValueType);
+  let consequent: t.Statement[] = [];
+  const castExpr = typeDef.cast(param);
+
+  if (typeDef.postCastStatement) {
+    const tempVariable = t.identifier("temp");
+    const variableDecl = t.variableDeclaration("const", [
+      t.variableDeclarator(tempVariable, castExpr),
+    ]);
+
+    const postCheckStatement = typeDef.postCastStatement(tempVariable);
+
+    consequent = [
+      variableDecl,
+      postCheckStatement,
+      t.returnStatement(tempVariable),
+    ];
+  } else {
+    consequent = [t.returnStatement(castExpr)];
+  }
+
   const mapBody = createNarrowingCheck(
     param,
     arrayValueType,
-    t.returnStatement(narrowed),
+    t.blockStatement(consequent),
     createTypeExpectationThrow(param.name, arrayValueType)
   );
 
@@ -190,4 +152,28 @@ function createArrayNarrowingMap(
   return t.callExpression(t.memberExpression(variable, t.identifier("map")), [
     mapArrowFn,
   ]);
+}
+
+function getTypeDef(type: PropertyType): BaseSchemaType {
+  if (
+    type.type === "string" ||
+    type.type === "number" ||
+    type.type === "boolean"
+  ) {
+    return new PrimitiveSchemaType(type);
+  }
+
+  if (type.type === "date") {
+    return new DateSchemaType(type);
+  }
+
+  if (type.type === "object") {
+    return new ObjectSchemaType(type);
+  }
+
+  if (type.type === "array") {
+    return new ArraySchemaType(type);
+  }
+
+  throw new Error("unable to create type def for " + stringifyType(type));
 }
