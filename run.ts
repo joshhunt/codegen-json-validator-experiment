@@ -23,6 +23,7 @@ const helloSchema: Schema = {
     _("name", _.string),
     _("age", _.number),
     _("is-handsome", _.boolean),
+    _("dateOfBirth", _.date),
 
     _("world", _.object(worldSchema.name)),
     _.optional(_("optionalWorld", _.object(worldSchema.name))),

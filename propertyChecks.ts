@@ -5,6 +5,7 @@ import {
   createAssignment,
   createMemberExpression,
   createNullCheck,
+  createOrTest,
   createTSTypeForPropertyType,
   createThrowStatement,
   createTypedIdentifier,
@@ -81,7 +82,6 @@ function createNarrowingCheck(
     );
   }
 
-  //
   // Handle primitive narrowing
   if (
     type.type === "string" ||
@@ -98,7 +98,26 @@ function createNarrowingCheck(
     return ifExp;
   }
 
-  //
+  // Handle date narrowing.
+  if (type.type === "date") {
+    const stringTypeCheck = createTypeofTest(variable, "string");
+    const dateInstnaceCheck = t.binaryExpression(
+      "instanceof",
+      variable,
+      t.identifier("Date")
+    );
+    const ifExp = t.ifStatement(
+      createAndAndTest(
+        proceedingCheck,
+        createOrTest(stringTypeCheck, dateInstnaceCheck)
+      ),
+      consequent,
+      alternate
+    );
+
+    return ifExp;
+  }
+
   // Handle object narrowing
   if (type.type === "object") {
     const typeofCheck = createTypeofTest(variable, "object");
@@ -112,7 +131,6 @@ function createNarrowingCheck(
     return ifExp;
   }
 
-  //
   // Handle array narrowing
   if (type.type === "array") {
     const arrayCheck = t.callExpression(
@@ -134,6 +152,10 @@ function createNarrowingCheck(
   );
 }
 
+// if (dateOfBirth instanceof Date && !isNaN(dateOfBirth.getTime())) {
+//   throw new Error("Expected valid dateOfBirth");
+// }
+
 function createCast(variable: Narrowable, type: PropertyType) {
   if (
     type.type === "string" ||
@@ -141,14 +163,33 @@ function createCast(variable: Narrowable, type: PropertyType) {
     type.type === "boolean"
   ) {
     return variable;
-  } else if (type.type === "object") {
+  }
+
+  if (type.type === "date") {
+    const instanceofCheck = t.binaryExpression(
+      "instanceof",
+      variable,
+      t.identifier("Date")
+    );
+    const ternery = t.conditionalExpression(
+      instanceofCheck,
+      variable,
+      t.newExpression(t.identifier("Date"), [variable])
+    );
+
+    return ternery;
+  }
+
+  if (type.type === "object") {
     const parserFunctionName = `parse${type.objectTypeName}`;
     return t.callExpression(t.identifier(parserFunctionName), [variable]);
-  } else if (type.type === "array") {
+  }
+
+  if (type.type === "array") {
     return createArrayNarrowingMap(variable, type.valueType);
   }
 
-  throw new Error("unknown type here");
+  throw new Error(`Unknown schema type ${stringifyType(type)} to cast`);
 }
 
 function createArrayNarrowingMap(

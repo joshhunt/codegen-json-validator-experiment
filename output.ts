@@ -2,6 +2,7 @@ interface Hello {
   name: string;
   age: number;
   "is-handsome": boolean;
+  dateOfBirth: Date;
   world: World;
   optionalWorld?: World;
   arrayOfNumbers: number[];
@@ -33,6 +34,19 @@ function parseHello(input: unknown): Hello {
     p3_ishandsome = input["is-handsome"];
   } else {
     throw new Error("Expected valid is-handsome");
+  }
+
+  let dateOfBirth: Date;
+  if (
+    "dateOfBirth" in input &&
+    (typeof input.dateOfBirth === "string" || input.dateOfBirth instanceof Date)
+  ) {
+    dateOfBirth =
+      input.dateOfBirth instanceof Date
+        ? input.dateOfBirth
+        : new Date(input.dateOfBirth);
+  } else {
+    throw new Error("Expected valid dateOfBirth");
   }
 
   let world: World;
@@ -107,6 +121,7 @@ function parseHello(input: unknown): Hello {
     name,
     age,
     ["is-handsome"]: p3_ishandsome,
+    dateOfBirth,
     world,
     optionalWorld,
     arrayOfNumbers,

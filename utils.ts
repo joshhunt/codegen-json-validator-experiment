@@ -1,15 +1,6 @@
 import * as t from "@babel/types";
 import { PropertyType } from "./types.js";
 
-export function typedIdentifier(
-  name: string,
-  type: t.Identifier["typeAnnotation"]
-) {
-  const node = t.identifier(name);
-  node.typeAnnotation = type;
-  return node;
-}
-
 export function createThrowStatement(message: string) {
   return t.throwStatement(
     t.newExpression(t.identifier("Error"), [t.stringLiteral(message)])
@@ -42,18 +33,27 @@ export function createTypedIdentifier(
   return variable;
 }
 
+function composeLogicalTests(
+  operator: "&&" | "||",
+  conditions: (t.Expression | undefined)[]
+): t.Expression {
+  const test = conditions.reduce((acc, curr) => {
+    if (!acc) return curr;
+    if (!curr) return acc;
+    return t.logicalExpression(operator, acc, curr);
+  });
+
+  return test ?? t.booleanLiteral(true);
+}
+
 export function createAndAndTest(
   ...conditions: (t.Expression | undefined)[]
 ): t.Expression {
-  return conditions.reduce((acc, curr) => {
-    if (!acc) return curr;
-    if (!curr) return acc;
-    return t.logicalExpression("&&", acc, curr);
-  })!; // todo: fix this non-null bang
+  return composeLogicalTests("&&", conditions);
 }
 
-function createOrTest(...conditions: t.Expression[]) {
-  return conditions.reduce((acc, curr) => t.logicalExpression("||", acc, curr));
+export function createOrTest(...conditions: (t.Expression | undefined)[]) {
+  return composeLogicalTests("||", conditions);
 }
 
 export function createAssignment(variable: t.Identifier, right: t.Expression) {
@@ -161,9 +161,7 @@ export function createFunctionWithUnknownArg(
   body: t.Statement[],
   returnType?: t.TSTypeAnnotation
 ) {
-  const args = [
-    typedIdentifier(argName, t.tsTypeAnnotation(t.tsUnknownKeyword())),
-  ];
+  const args = [createTypedIdentifier(argName, t.tsUnknownKeyword())];
 
   const fn = t.functionDeclaration(
     t.identifier(fnName),
@@ -182,6 +180,10 @@ export function createTSTypeForPropertyType(type: PropertyType): t.TSType {
     type.type === "boolean"
   ) {
     return t.tsTypeReference(t.identifier(type.type));
+  }
+
+  if (type.type === "date") {
+    return t.tsTypeReference(t.identifier("Date"));
   }
 
   if (type.type === "object") {

@@ -12,8 +12,13 @@ export interface ArrayPropertyType {
   valueType: PropertyType;
 }
 
+export interface DatePropertyType {
+  type: "date";
+}
+
 export type PropertyType =
   | PrimitivePropertyType
+  | DatePropertyType
   | ObjectPropertyType
   | ArrayPropertyType;
 
@@ -47,6 +52,7 @@ schemaProperty.optional = (prop: SchemaProperty) => {
 schemaProperty.string = (): PrimitivePropertyType => ({ type: "string" });
 schemaProperty.number = (): PrimitivePropertyType => ({ type: "number" });
 schemaProperty.boolean = (): PrimitivePropertyType => ({ type: "boolean" });
+schemaProperty.date = (): DatePropertyType => ({ type: "date" });
 schemaProperty.array = (memberType: TypeShorthand): ArrayPropertyType => ({
   type: "array",
   valueType: callType(memberType),
