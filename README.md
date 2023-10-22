@@ -51,4 +51,4 @@ I feel like that would be pretty unfair to the other libraries. Though, it would
 
 Similar approaches (that i found after the fact, otherwise i probably woudln't have tried this):
  - https://typia.io/docs/validators/assert/ basically roughly exactly the same as this (except, with actual features)
-
+ - https://github.com/rhys-vdw/ts-auto-guard also basically exactly the same. more similar to mine.
