@@ -7,12 +7,12 @@ import {
   createNullCheck,
   createOrTest,
   createTSTypeForPropertyType,
-  createThrowStatement,
   createTypeExpectationThrow,
   createTypedIdentifier,
   createTypeofTest,
   stringifyType,
 } from "./utils.js";
+import { PrimitiveSchemaType } from "./src/schema/types/PrimitiveSchemaType.js";
 
 type Narrowable = t.Identifier | t.MemberExpression;
 
@@ -81,20 +81,15 @@ function createNarrowingCheck(
     );
   }
 
+  let testExp: t.Expression | undefined = undefined;
+
   // Handle primitive narrowing
   if (
     type.type === "string" ||
     type.type === "number" ||
     type.type === "boolean"
   ) {
-    const typeofCheck = createTypeofTest(variable, type.type);
-    const ifExp = t.ifStatement(
-      createAndAndTest(proceedingCheck, typeofCheck),
-      consequent,
-      alternate
-    );
-
-    return ifExp;
+    testExp = PrimitiveSchemaType.narrowCheck(variable, type);
   }
 
   // Handle date narrowing.
@@ -105,55 +100,38 @@ function createNarrowingCheck(
       variable,
       t.identifier("Date")
     );
-    const ifExp = t.ifStatement(
-      createAndAndTest(
-        proceedingCheck,
-        createOrTest(stringTypeCheck, dateInstnaceCheck)
-      ),
-      consequent,
-      alternate
-    );
-
-    return ifExp;
+    testExp = createOrTest(stringTypeCheck, dateInstnaceCheck);
   }
 
   // Handle object narrowing
   if (type.type === "object") {
     const typeofCheck = createTypeofTest(variable, "object");
     const notNullCheck = createNullCheck(variable, "!==");
-    const ifExp = t.ifStatement(
-      createAndAndTest(proceedingCheck, typeofCheck, notNullCheck),
-      consequent,
-      alternate
-    );
-
-    return ifExp;
+    testExp = createAndAndTest(typeofCheck, notNullCheck);
   }
 
   // Handle array narrowing
   if (type.type === "array") {
-    const arrayCheck = t.callExpression(
+    testExp = t.callExpression(
       t.memberExpression(t.identifier("Array"), t.identifier("isArray")),
       [variable]
     );
-
-    const ifExp = t.ifStatement(
-      createAndAndTest(proceedingCheck, arrayCheck),
-      consequent,
-      alternate
-    );
-
-    return ifExp;
   }
 
-  throw new Error(
-    `Unknown schema type ${stringifyType(type)} to create narrowing check`
-  );
-}
+  if (testExp === undefined) {
+    throw new Error(
+      `Unknown schema type ${stringifyType(type)} to create narrowing check`
+    );
+  }
 
-// if (dateOfBirth instanceof Date && !isNaN(dateOfBirth.getTime())) {
-//   throw new Error("Expected valid dateOfBirth");
-// }
+  const ifExp = t.ifStatement(
+    createAndAndTest(proceedingCheck, testExp),
+    consequent,
+    alternate
+  );
+
+  return ifExp;
+}
 
 function createCast(variable: Narrowable, type: PropertyType) {
   if (
@@ -161,7 +139,7 @@ function createCast(variable: Narrowable, type: PropertyType) {
     type.type === "number" ||
     type.type === "boolean"
   ) {
-    return variable;
+    return PrimitiveSchemaType.cast(variable, type);
   }
 
   if (type.type === "date") {

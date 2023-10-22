@@ -29,7 +29,7 @@ function createBodyStatementsForProperty(
 
 export function generateFunctionForSchema(
   schema: Schema
-): [t.TSInterfaceDeclaration, t.FunctionDeclaration] {
+): [t.TSInterfaceDeclaration, t.Statement] {
   const bodyStatements: t.Statement[] = [];
   const returnObjectProperties: t.ObjectProperty[] = [];
   const tsInterfaceProperties: t.TSPropertySignature[] = [];
@@ -75,9 +75,11 @@ export function generateFunctionForSchema(
     fnReturnType
   );
 
+  const exportStatement = t.exportNamedDeclaration(fn, []);
+
   const tsInterface = createTSInterface(schema.name, tsInterfaceProperties);
 
-  return [tsInterface, fn];
+  return [tsInterface, exportStatement];
 }
 
 function generateTSInterfacePropertyForSchemaProperty(

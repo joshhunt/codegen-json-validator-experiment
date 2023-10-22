@@ -1,3 +1,7 @@
+import * as t from "@babel/types";
+
+export type Narrowable = t.Identifier | t.MemberExpression;
+
 export interface PrimitivePropertyType {
   type: "string" | "number" | "boolean";
 }
@@ -35,6 +39,12 @@ export interface Schema {
 }
 
 type TypeShorthand = PropertyType | (() => PropertyType);
+
+export interface SchemaPropertyDefinition {
+  name: string;
+  narrowCheck: (variable: Narrowable, type: PropertyType) => t.Expression;
+  cast: (variable: Narrowable, type: PropertyType) => t.Expression;
+}
 
 function callType(type: TypeShorthand) {
   return typeof type === "function" ? type() : type;

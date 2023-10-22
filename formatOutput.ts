@@ -37,6 +37,8 @@ const ESLINT_CONFIG = {
       "error",
       { blankLine: "always", prev: "*", next: "function" },
       { blankLine: "always", prev: "function", next: "*" },
+      { blankLine: "always", prev: "*", next: "export" },
+      { blankLine: "always", prev: "export", next: "*" },
       { blankLine: "always", prev: "*", next: "if" },
       { blankLine: "always", prev: "if", next: "*" },
       { blankLine: "never", prev: "let", next: "if" },
