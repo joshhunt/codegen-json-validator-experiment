@@ -1,5 +1,5 @@
 import * as t from "@babel/types";
-import { PropertyType } from "./types.js";
+import { Narrowable, PropertyType } from "./types.js";
 
 export function createTypeExpectationThrow(
   name: t.Identifier | string,
@@ -227,4 +227,18 @@ export function stringifyType(type: PropertyType): string {
   }
 
   throw new Error(`Unable to stringify type ${JSON.stringify(type)}`);
+}
+
+export function getNameIshForNarrowable(variable: Narrowable) {
+  if (variable.type === "Identifier") {
+    return variable.name;
+  }
+
+  const property = variable.property;
+
+  if (property.type === "Identifier") {
+    return property.name;
+  }
+
+  throw new Error(`not implemented for type ${variable.type}`);
 }

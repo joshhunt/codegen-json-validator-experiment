@@ -1,5 +1,5 @@
 import * as t from "@babel/types";
-import { PropertyType, Schema, SchemaProperty } from "./src/types.js";
+import { Schema, SchemaProperty } from "./src/types.js";
 import {
   toValidIdentifier,
   createObjectNarrowingCheck,
@@ -8,9 +8,9 @@ import {
   createTSInterface,
   createFunctionWithUnknownArg,
   createTSTypeForPropertyType,
-  stringifyType,
 } from "./src/utils.js";
 import { createPropertyCheck } from "./src/propertyChecks.js";
+import { getTypeDef } from "./src/schema/types/getTypeDef.js";
 
 const INPUT_VARIABLE_NAME = "input";
 
@@ -18,8 +18,9 @@ function createBodyStatementsForProperty(
   property: SchemaProperty,
   variableName: string
 ) {
+  const typeDef = getTypeDef(property.type);
   return createPropertyCheck(
-    property.type,
+    typeDef,
     INPUT_VARIABLE_NAME,
     variableName,
     property.name,

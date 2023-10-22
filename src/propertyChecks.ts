@@ -1,27 +1,17 @@
 import * as t from "@babel/types";
-import { PropertyType } from "./types.js";
+import { Narrowable } from "./types.js";
 import {
   createAndAndTest,
   createAssignment,
   createMemberExpression,
-  createNullCheck,
   createTSTypeForPropertyType,
   createTypeExpectationThrow,
   createTypedIdentifier,
-  createTypeofTest,
-  stringifyType,
 } from "./utils.js";
-import { PrimitiveSchemaType } from "./schema/types/PrimitiveSchemaType.js";
-import { DateSchemaType } from "./schema/types/DateSchemaType.js";
-import { ObjectSchemaType } from "./schema/types/ObjectSchemaType.js";
-import { ArraySchemaType } from "./schema/types/ArraySchemaType.js";
 import BaseSchemaType from "./schema/types/BaseSchemaType.js";
-import generate from "@babel/generator";
-
-type Narrowable = t.Identifier | t.MemberExpression;
 
 export function createPropertyCheck(
-  type: PropertyType,
+  typeDef: BaseSchemaType,
   parentObjectName: string,
   variableName: string,
   propertyName: string,
@@ -31,7 +21,7 @@ export function createPropertyCheck(
 
   const variable = createTypedIdentifier(
     variableName,
-    createTSTypeForPropertyType(type),
+    createTSTypeForPropertyType(typeDef.type),
     !required
   );
 
@@ -42,8 +32,7 @@ export function createPropertyCheck(
     ),
   ]);
 
-  const typeDef = getTypeDef(type);
-  const narrowed = createCast(propertyMember, type);
+  const narrowed = typeDef.cast(propertyMember);
 
   const consequent: t.Statement[] = [createAssignment(variable, narrowed)];
 
@@ -54,17 +43,19 @@ export function createPropertyCheck(
 
   const ifExp = createNarrowingCheck(
     propertyMember,
-    type,
+    typeDef,
     t.blockStatement(consequent),
-    required ? createTypeExpectationThrow(propertyName, type) : undefined
+    required
+      ? createTypeExpectationThrow(propertyName, typeDef.type)
+      : undefined
   );
 
   return [variableDecl, ifExp];
 }
 
-function createNarrowingCheck(
+export function createNarrowingCheck(
   variable: Narrowable,
-  type: PropertyType,
+  typeDef: BaseSchemaType,
   consequent: t.Statement,
   alternate?: t.Statement
 ) {
@@ -93,7 +84,6 @@ function createNarrowingCheck(
     );
   }
 
-  const typeDef = getTypeDef(type);
   const testExp = typeDef.narrowCheck(variable);
 
   const ifExp = t.ifStatement(
@@ -103,98 +93,4 @@ function createNarrowingCheck(
   );
 
   return ifExp;
-}
-
-function createCast(variable: Narrowable, type: PropertyType) {
-  const typeDef = getTypeDef(type);
-  return typeDef.cast(variable);
-}
-
-function getNameIshForNarrowable(variable: Narrowable) {
-  if (variable.type === "Identifier") {
-    return variable.name;
-  }
-
-  const property = variable.property;
-
-  if (property.type === "Identifier") {
-    return property.name;
-  }
-
-  throw new Error(`not implemented for type ${variable.type}`);
-}
-
-export function createArrayNarrowingMap(
-  variable: Narrowable,
-  arrayValueType: PropertyType
-) {
-  const variableName = getNameIshForNarrowable(variable);
-
-  const param = createTypedIdentifier(
-    `${variableName}Item`,
-    t.tsUnknownKeyword()
-  );
-
-  const typeDef = getTypeDef(arrayValueType);
-  let consequent: t.Statement[] = [];
-  const castExpr = typeDef.cast(param);
-
-  if (typeDef.postCastStatement) {
-    const variableName = getNameIshForNarrowable(variable);
-    const tempVariable = t.identifier(`${variableName}Temp`);
-
-    const variableDecl = t.variableDeclaration("const", [
-      t.variableDeclarator(tempVariable, castExpr),
-    ]);
-
-    const postCheckStatement = typeDef.postCastStatement(tempVariable);
-
-    consequent = [
-      variableDecl,
-      postCheckStatement,
-      t.returnStatement(tempVariable),
-    ];
-  } else {
-    consequent = [t.returnStatement(castExpr)];
-  }
-
-  const mapBody = createNarrowingCheck(
-    param,
-    arrayValueType,
-    t.blockStatement(consequent),
-    createTypeExpectationThrow(param.name, arrayValueType)
-  );
-
-  const mapArrowFn = t.arrowFunctionExpression(
-    [param],
-    t.blockStatement([mapBody])
-  );
-
-  return t.callExpression(t.memberExpression(variable, t.identifier("map")), [
-    mapArrowFn,
-  ]);
-}
-
-function getTypeDef(type: PropertyType): BaseSchemaType {
-  if (
-    type.type === "string" ||
-    type.type === "number" ||
-    type.type === "boolean"
-  ) {
-    return new PrimitiveSchemaType(type);
-  }
-
-  if (type.type === "date") {
-    return new DateSchemaType(type);
-  }
-
-  if (type.type === "object") {
-    return new ObjectSchemaType(type);
-  }
-
-  if (type.type === "array") {
-    return new ArraySchemaType(type);
-  }
-
-  throw new Error("unable to create type def for " + stringifyType(type));
 }
