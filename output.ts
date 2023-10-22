@@ -42,9 +42,7 @@ export function parseHello(input: unknown): Hello {
     (typeof input.dateOfBirth === "string" || input.dateOfBirth instanceof Date)
   ) {
     dateOfBirth =
-      input.dateOfBirth instanceof Date
-        ? input.dateOfBirth
-        : new Date(input.dateOfBirth);
+      input.dateOfBirth instanceof Date ? input.dateOfBirth : new Date(input.dateOfBirth);
 
     if (!isNaN(dateOfBirth.getTime())) {
       throw new Error("Expected dateOfBirth to be a valid date");
@@ -54,11 +52,7 @@ export function parseHello(input: unknown): Hello {
   }
 
   let world: World;
-  if (
-    "world" in input &&
-    typeof input.world === "object" &&
-    input.world !== null
-  ) {
+  if ("world" in input && typeof input.world === "object" && input.world !== null) {
     world = parseWorld(input.world);
   } else {
     throw new Error("Expected world to be a valid object(World)");
@@ -89,53 +83,35 @@ export function parseHello(input: unknown): Hello {
   let arrayOfObjects: World[];
   if ("arrayOfObjects" in input && Array.isArray(input.arrayOfObjects)) {
     arrayOfObjects = input.arrayOfObjects.map((arrayOfObjectsItem: unknown) => {
-      if (
-        typeof arrayOfObjectsItem === "object" &&
-        arrayOfObjectsItem !== null
-      ) {
+      if (typeof arrayOfObjectsItem === "object" && arrayOfObjectsItem !== null) {
         return parseWorld(arrayOfObjectsItem);
       } else {
-        throw new Error(
-          "Expected arrayOfObjectsItem to be a valid object(World)",
-        );
+        throw new Error("Expected arrayOfObjectsItem to be a valid object(World)");
       }
     });
   } else {
-    throw new Error(
-      "Expected arrayOfObjects to be a valid array(object(World))",
-    );
+    throw new Error("Expected arrayOfObjects to be a valid array(object(World))");
   }
 
   let arrayOfArrayofNumbers: number[][];
-  if (
-    "arrayOfArrayofNumbers" in input &&
-    Array.isArray(input.arrayOfArrayofNumbers)
-  ) {
+  if ("arrayOfArrayofNumbers" in input && Array.isArray(input.arrayOfArrayofNumbers)) {
     arrayOfArrayofNumbers = input.arrayOfArrayofNumbers.map(
       (arrayOfArrayofNumbersItem: unknown) => {
         if (Array.isArray(arrayOfArrayofNumbersItem)) {
-          return arrayOfArrayofNumbersItem.map(
-            (arrayOfArrayofNumbersItemItem: unknown) => {
-              if (typeof arrayOfArrayofNumbersItemItem === "number") {
-                return arrayOfArrayofNumbersItemItem;
-              } else {
-                throw new Error(
-                  "Expected arrayOfArrayofNumbersItemItem to be a valid number",
-                );
-              }
-            },
-          );
+          return arrayOfArrayofNumbersItem.map((arrayOfArrayofNumbersItemItem: unknown) => {
+            if (typeof arrayOfArrayofNumbersItemItem === "number") {
+              return arrayOfArrayofNumbersItemItem;
+            } else {
+              throw new Error("Expected arrayOfArrayofNumbersItemItem to be a valid number");
+            }
+          });
         } else {
-          throw new Error(
-            "Expected arrayOfArrayofNumbersItem to be a valid array(number)",
-          );
+          throw new Error("Expected arrayOfArrayofNumbersItem to be a valid array(number)");
         }
       },
     );
   } else {
-    throw new Error(
-      "Expected arrayOfArrayofNumbers to be a valid array(array(number))",
-    );
+    throw new Error("Expected arrayOfArrayofNumbers to be a valid array(array(number))");
   }
 
   return {
@@ -193,14 +169,8 @@ export function parseWorld(input: unknown): World {
   let validDates: Date[];
   if ("validDates" in input && Array.isArray(input.validDates)) {
     validDates = input.validDates.map((validDatesItem: unknown) => {
-      if (
-        typeof validDatesItem === "string" ||
-        validDatesItem instanceof Date
-      ) {
-        const temp =
-          validDatesItem instanceof Date
-            ? validDatesItem
-            : new Date(validDatesItem);
+      if (typeof validDatesItem === "string" || validDatesItem instanceof Date) {
+        const temp = validDatesItem instanceof Date ? validDatesItem : new Date(validDatesItem);
 
         if (!isNaN(temp.getTime())) {
           throw new Error("Expected temp to be a valid date");
