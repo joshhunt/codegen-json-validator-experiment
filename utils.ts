@@ -1,4 +1,5 @@
 import * as t from "@babel/types";
+import { PropertyType } from "./types.js";
 
 export function typedIdentifier(
   name: string,
@@ -9,7 +10,7 @@ export function typedIdentifier(
   return node;
 }
 
-function createThrowStatement(message: string) {
+export function createThrowStatement(message: string) {
   return t.throwStatement(
     t.newExpression(t.identifier("Error"), [t.stringLiteral(message)])
   );
@@ -18,7 +19,7 @@ function createThrowStatement(message: string) {
 export function createObjectNarrowingCheck(variableName: string) {
   const variable = t.identifier(variableName);
 
-  const typeofCheck = createTypeofExp(variable, "object", "!==");
+  const typeofCheck = createTypeofTest(variable, "object", "!==");
   const nullCheck = t.binaryExpression("===", variable, t.nullLiteral());
   const check = createOrTest(typeofCheck, nullCheck);
 
@@ -29,109 +30,37 @@ export function createObjectNarrowingCheck(variableName: string) {
   return ifExp;
 }
 
-function createVariableTypeAnnotation(typeName: string, optional: boolean) {
-  const type = t.tsTypeReference(t.identifier(typeName));
-  return t.tsTypeAnnotation(
+export function createTypedIdentifier(
+  name: string,
+  type: t.TSType,
+  optional = false
+) {
+  const variable = t.identifier(name);
+  variable.typeAnnotation = t.tsTypeAnnotation(
     optional ? t.tsUnionType([type, t.tsUndefinedKeyword()]) : type
   );
+  return variable;
 }
 
-export function createObjectPropertyCheck(
-  objectType: string,
-  parentObjectName: string,
-  variableName: string,
-  propertyName: string,
-  required: boolean = true
-) {
-  const object = t.identifier(parentObjectName);
-  const variable = t.identifier(variableName);
-  variable.typeAnnotation = createVariableTypeAnnotation(objectType, !required);
-  const propertyMember = createMemberExpression(object, propertyName);
-
-  const variableDecl = t.variableDeclaration("let", [
-    t.variableDeclarator(variable),
-  ]);
-
-  if (!required) {
-    variableDecl.declarations[0].init = t.identifier("undefined");
-  }
-
-  const inCheck = t.binaryExpression(
-    "in",
-    t.stringLiteral(propertyName),
-    object
-  );
-  const typeofCheck = createTypeofExp(propertyMember, "object");
-  const notNullCheck = t.binaryExpression(
-    "!==",
-    propertyMember,
-    t.nullLiteral()
-  );
-
-  const parserFunctionName = `parse${objectType}`;
-  const callExp = t.callExpression(t.identifier(parserFunctionName), [
-    propertyMember,
-  ]);
-
-  const ifExp = t.ifStatement(
-    createAndAndTest(inCheck, typeofCheck, notNullCheck),
-    createAssignment(variable, callExp),
-    required ? createThrowStatement(`Expected valid ${propertyName}`) : null
-  );
-
-  return [variableDecl, ifExp];
-}
-
-export function createPrimitivePropertyCheck(
-  type: "string" | "number" | "boolean",
-  parentObjectName: string,
-  variableName: string,
-  propertyName: string,
-  required: boolean = true
-) {
-  const object = t.identifier(parentObjectName);
-  const variable = t.identifier(variableName);
-  variable.typeAnnotation = createVariableTypeAnnotation(type, !required);
-  const propertyMember = createMemberExpression(object, propertyName);
-
-  const variableDecl = t.variableDeclaration("let", [
-    t.variableDeclarator(variable),
-  ]);
-
-  if (!required) {
-    variableDecl.declarations[0].init = t.identifier("undefined");
-  }
-
-  const inCheck = t.binaryExpression(
-    "in",
-    t.stringLiteral(propertyName),
-    object
-  );
-
-  const typeofCheck = createTypeofExp(propertyMember, type);
-
-  const ifExp = t.ifStatement(
-    createAndAndTest(inCheck, typeofCheck),
-    createAssignment(variable, propertyMember),
-    required ? createThrowStatement(`Expected valid ${propertyName}`) : null
-  );
-
-  return [variableDecl, ifExp];
-}
-
-function createAndAndTest(...conditions: t.Expression[]) {
-  return conditions.reduce((acc, curr) => t.logicalExpression("&&", acc, curr));
+export function createAndAndTest(
+  ...conditions: (t.Expression | undefined)[]
+): t.Expression {
+  return conditions.reduce((acc, curr) => {
+    if (!acc) return curr;
+    if (!curr) return acc;
+    return t.logicalExpression("&&", acc, curr);
+  })!; // todo: fix this non-null bang
 }
 
 function createOrTest(...conditions: t.Expression[]) {
   return conditions.reduce((acc, curr) => t.logicalExpression("||", acc, curr));
 }
 
-function createAssignment(variable: t.Identifier, right: t.Expression) {
+export function createAssignment(variable: t.Identifier, right: t.Expression) {
   return t.expressionStatement(t.assignmentExpression("=", variable, right));
 }
 
-function createTypeofExp(
+export function createTypeofTest(
   variable: t.Expression,
   type: string,
   operator: "===" | "!==" = "==="
@@ -143,16 +72,40 @@ function createTypeofExp(
   );
 }
 
-export function isValidIdentifier(name: string) {
-  return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name);
+export function createNullCheck(
+  variable: t.Expression,
+  operator: "===" | "!==" = "==="
+) {
+  return t.binaryExpression(operator, variable, t.nullLiteral());
 }
 
-function createMemberExpression(object: t.Identifier, propertyName: string) {
-  if (isValidIdentifier(propertyName)) {
-    return t.memberExpression(object, t.identifier(propertyName));
+export function createMemberExpression(...parts: string[]) {
+  const memberExpression = parts
+    .map((v) => {
+      if (t.isValidIdentifier(v)) {
+        return t.identifier(v);
+      }
+
+      return t.stringLiteral(v);
+    })
+    .reduce<t.MemberExpression | t.Identifier | t.StringLiteral | null>(
+      (acc, part) => {
+        if (acc === null) {
+          return part;
+        }
+
+        return t.memberExpression(acc, part, t.isStringLiteral(part));
+      },
+      null
+    );
+
+  if (memberExpression?.type !== "MemberExpression") {
+    throw new Error(
+      `Failed to create member expression - instead created a ${memberExpression?.type}`
+    );
   }
 
-  return t.memberExpression(object, t.stringLiteral(propertyName), true);
+  return memberExpression;
 }
 
 // a function that takes a string and returns that string as a valid javascript identifier
@@ -220,4 +173,36 @@ export function createFunctionWithUnknownArg(
   fn.returnType = returnType;
 
   return fn;
+}
+
+export function createTSTypeForPropertyType(type: PropertyType): t.TSType {
+  if (
+    type.type === "string" ||
+    type.type === "number" ||
+    type.type === "boolean"
+  ) {
+    return t.tsTypeReference(t.identifier(type.type));
+  }
+
+  if (type.type === "object") {
+    return t.tsTypeReference(t.identifier(type.objectTypeName));
+  }
+
+  if (type.type === "array") {
+    const memberType = createTSTypeForPropertyType(type.valueType);
+    return t.tsArrayType(memberType);
+  }
+
+  throw new Error(`Unknown schema type '${type.type}' to create ts type`);
+}
+
+export function stringifyType(type: PropertyType): string {
+  const { type: typeName, ...rest } = type;
+
+  if (Object.keys(rest).length === 0) return typeName;
+
+  return `${typeName}(${JSON.stringify(rest)
+    .replace(/"/g, "")
+    .replace(/^{/g, "")
+    .replace(/}$/g, "")})`;
 }

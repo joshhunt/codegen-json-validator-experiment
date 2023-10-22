@@ -1,26 +1,18 @@
 import * as t from "@babel/types";
 import generator from "@babel/generator";
 import * as fs from "fs/promises";
-import { Schema } from "./types.js";
+import _, { Schema } from "./types.js";
 import { formatSourceCode } from "./formatOutput.js";
 import { generateFunctionForSchema } from "./generator.js";
 
-const woweeSchema: Schema = {
-  name: "Wowee",
-  type: "object",
-  properties: [
-    { name: "beep", type: "number" },
-    { name: "boop", type: "boolean" },
-  ],
-};
 const worldSchema: Schema = {
   name: "World",
   type: "object",
   properties: [
-    { name: "foo", type: "string" },
-    { name: "bar", type: "number" },
-    { name: "baz", type: "boolean" },
-    { name: "optionalFoo", type: "string", optional: true },
+    _("foo", _.string),
+    _("bar", _.number),
+    _("baz", _.boolean),
+    _.optional(_("optionalFoo", _.string)),
   ],
 };
 
@@ -28,20 +20,20 @@ const helloSchema: Schema = {
   name: "Hello",
   type: "object",
   properties: [
-    { name: "name", type: "string" },
-    { name: "age", type: "number" },
-    { name: "foo-bar", type: "number" },
-    { name: "world", type: "object", objectTypeName: worldSchema.name },
-    {
-      name: "wowee-is-optional",
-      type: "object",
-      objectTypeName: woweeSchema.name,
-      optional: true,
-    },
+    _("name", _.string),
+    _("age", _.number),
+    _("is-handsome", _.boolean),
+
+    _("world", _.object(worldSchema.name)),
+    _.optional(_("optionalWorld", _.object(worldSchema.name))),
+
+    _("arrayOfNumbers", _.array(_.number)),
+    _("arrayOfObjects", _.array(_.object(worldSchema.name))),
+    _("arrayOfArrayofNumbers", _.array(_.array(_.number))),
   ],
 };
 
-const schemas = [helloSchema, worldSchema, woweeSchema];
+const schemas = [helloSchema, worldSchema];
 
 const fileBody = schemas.flatMap((schema) => {
   return generateFunctionForSchema(schema);
@@ -60,4 +52,4 @@ const formattedCode = await formatSourceCode(generatedCode);
 
 await fs.writeFile("output.ts", formattedCode);
 
-console.log(formattedCode);
+console.log("Generated successfully");

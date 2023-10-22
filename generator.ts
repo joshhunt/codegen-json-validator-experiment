@@ -1,15 +1,16 @@
 import * as t from "@babel/types";
-import { Schema, SchemaProperty } from "./types.js";
+import { PropertyType, Schema, SchemaProperty } from "./types.js";
 import {
   toValidIdentifier,
-  createPrimitivePropertyCheck,
-  createObjectPropertyCheck,
   createObjectNarrowingCheck,
   createReturnObject,
   createObjectProperty,
   createTSInterface,
   createFunctionWithUnknownArg,
+  createTSTypeForPropertyType,
+  stringifyType,
 } from "./utils.js";
+import { createPropertyCheck } from "./propertyChecks.js";
 
 const INPUT_VARIABLE_NAME = "input";
 
@@ -17,29 +18,13 @@ function createBodyStatementsForProperty(
   property: SchemaProperty,
   variableName: string
 ) {
-  if (
-    property.type === "boolean" ||
-    property.type === "number" ||
-    property.type === "string"
-  ) {
-    return createPrimitivePropertyCheck(
-      property.type,
-      INPUT_VARIABLE_NAME,
-      variableName,
-      property.name,
-      !property.optional
-    );
-  } else if (property.type === "object") {
-    return createObjectPropertyCheck(
-      property.objectTypeName,
-      INPUT_VARIABLE_NAME,
-      variableName,
-      property.name,
-      !property.optional
-    );
-  }
-
-  throw new Error("unknown schema property type");
+  return createPropertyCheck(
+    property.type,
+    INPUT_VARIABLE_NAME,
+    variableName,
+    property.name,
+    !property.optional
+  );
 }
 
 export function generateFunctionForSchema(
@@ -100,22 +85,17 @@ function generateTSInterfacePropertyForSchemaProperty(
 ) {
   const { name, type } = property;
 
-  let propertyType: t.TSTypeAnnotation;
-  if (type === "boolean" || type === "number" || type === "string") {
-    propertyType = t.tsTypeAnnotation(t.tsTypeReference(t.identifier(type)));
-  } else if (type === "object") {
-    propertyType = t.tsTypeAnnotation(
-      t.tsTypeReference(t.identifier(property.objectTypeName))
-    );
-  } else {
-    throw new Error("unknown schema property type");
-  }
+  const propertyType = createTSTypeForPropertyType(type);
 
   const propetyName = t.isValidIdentifier(name)
     ? t.identifier(name)
     : t.stringLiteral(name);
 
-  const propertySig = t.tsPropertySignature(propetyName, propertyType, null);
+  const propertySig = t.tsPropertySignature(
+    propetyName,
+    t.tsTypeAnnotation(propertyType),
+    null
+  );
   if (property.optional) {
     propertySig.optional = true;
   }
