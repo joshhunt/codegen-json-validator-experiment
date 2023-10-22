@@ -13,6 +13,7 @@ const worldSchema: Schema = {
     _("bar", _.number),
     _("baz", _.boolean),
     _.optional(_("optionalFoo", _.string)),
+    _("validDates", _.array(_.date)),
   ],
 };
 

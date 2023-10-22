@@ -135,6 +135,7 @@ interface World {
   bar: number;
   baz: boolean;
   optionalFoo?: string;
+  validDates: Date[];
 }
 
 function parseWorld(input: unknown): World {
@@ -168,10 +169,24 @@ function parseWorld(input: unknown): World {
     optionalFoo = input.optionalFoo;
   }
 
+  let validDates: Date[];
+  if ("validDates" in input && Array.isArray(input.validDates)) {
+    validDates = input.validDates.map((item: unknown) => {
+      if (typeof item === "string" || item instanceof Date) {
+        return item instanceof Date ? item : new Date(item);
+      } else {
+        throw new Error("Expected valid item");
+      }
+    });
+  } else {
+    throw new Error("Expected valid validDates");
+  }
+
   return {
     foo,
     bar,
     baz,
     optionalFoo,
+    validDates,
   };
 }
