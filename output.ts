@@ -19,21 +19,21 @@ function parseHello(input: unknown): Hello {
   if ("name" in input && typeof input.name === "string") {
     name = input.name;
   } else {
-    throw new Error("Expected valid name");
+    throw new Error("Expected name to be a valid string");
   }
 
   let age: number;
   if ("age" in input && typeof input.age === "number") {
     age = input.age;
   } else {
-    throw new Error("Expected valid age");
+    throw new Error("Expected age to be a valid number");
   }
 
   let p3_ishandsome: boolean;
   if ("is-handsome" in input && typeof input["is-handsome"] === "boolean") {
     p3_ishandsome = input["is-handsome"];
   } else {
-    throw new Error("Expected valid is-handsome");
+    throw new Error("Expected is-handsome to be a valid boolean");
   }
 
   let dateOfBirth: Date;
@@ -46,7 +46,7 @@ function parseHello(input: unknown): Hello {
         ? input.dateOfBirth
         : new Date(input.dateOfBirth);
   } else {
-    throw new Error("Expected valid dateOfBirth");
+    throw new Error("Expected dateOfBirth to be a valid date");
   }
 
   let world: World;
@@ -57,7 +57,7 @@ function parseHello(input: unknown): Hello {
   ) {
     world = parseWorld(input.world);
   } else {
-    throw new Error("Expected valid world");
+    throw new Error("Expected world to be a valid object(World)");
   }
 
   let optionalWorld: World | undefined = undefined;
@@ -75,11 +75,11 @@ function parseHello(input: unknown): Hello {
       if (typeof item === "number") {
         return item;
       } else {
-        throw new Error("Expected valid item");
+        throw new Error("Expected item to be a valid number");
       }
     });
   } else {
-    throw new Error("Expected valid arrayOfNumbers");
+    throw new Error("Expected arrayOfNumbers to be a valid array(number)");
   }
 
   let arrayOfObjects: World[];
@@ -88,11 +88,13 @@ function parseHello(input: unknown): Hello {
       if (typeof item === "object" && item !== null) {
         return parseWorld(item);
       } else {
-        throw new Error("Expected valid item");
+        throw new Error("Expected item to be a valid object(World)");
       }
     });
   } else {
-    throw new Error("Expected valid arrayOfObjects");
+    throw new Error(
+      "Expected arrayOfObjects to be a valid array(object(World))",
+    );
   }
 
   let arrayOfArrayofNumbers: number[][];
@@ -106,15 +108,17 @@ function parseHello(input: unknown): Hello {
           if (typeof item === "number") {
             return item;
           } else {
-            throw new Error("Expected valid item");
+            throw new Error("Expected item to be a valid number");
           }
         });
       } else {
-        throw new Error("Expected valid item");
+        throw new Error("Expected item to be a valid array(number)");
       }
     });
   } else {
-    throw new Error("Expected valid arrayOfArrayofNumbers");
+    throw new Error(
+      "Expected arrayOfArrayofNumbers to be a valid array(array(number))",
+    );
   }
 
   return {
@@ -147,21 +151,21 @@ function parseWorld(input: unknown): World {
   if ("foo" in input && typeof input.foo === "string") {
     foo = input.foo;
   } else {
-    throw new Error("Expected valid foo");
+    throw new Error("Expected foo to be a valid string");
   }
 
   let bar: number;
   if ("bar" in input && typeof input.bar === "number") {
     bar = input.bar;
   } else {
-    throw new Error("Expected valid bar");
+    throw new Error("Expected bar to be a valid number");
   }
 
   let baz: boolean;
   if ("baz" in input && typeof input.baz === "boolean") {
     baz = input.baz;
   } else {
-    throw new Error("Expected valid baz");
+    throw new Error("Expected baz to be a valid boolean");
   }
 
   let optionalFoo: string | undefined = undefined;
@@ -175,11 +179,11 @@ function parseWorld(input: unknown): World {
       if (typeof item === "string" || item instanceof Date) {
         return item instanceof Date ? item : new Date(item);
       } else {
-        throw new Error("Expected valid item");
+        throw new Error("Expected item to be a valid date");
       }
     });
   } else {
-    throw new Error("Expected valid validDates");
+    throw new Error("Expected validDates to be a valid array(date)");
   }
 
   return {

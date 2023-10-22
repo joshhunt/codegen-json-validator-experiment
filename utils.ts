@@ -1,6 +1,16 @@
 import * as t from "@babel/types";
 import { PropertyType } from "./types.js";
 
+export function createTypeExpectationThrow(
+  name: t.Identifier | string,
+  expectedType: PropertyType
+) {
+  const nameString = typeof name === "string" ? name : name.name;
+  return createThrowStatement(
+    `Expected ${nameString} to be a valid ${stringifyType(expectedType)}`
+  );
+}
+
 export function createThrowStatement(message: string) {
   return t.throwStatement(
     t.newExpression(t.identifier("Error"), [t.stringLiteral(message)])
@@ -199,12 +209,22 @@ export function createTSTypeForPropertyType(type: PropertyType): t.TSType {
 }
 
 export function stringifyType(type: PropertyType): string {
-  const { type: typeName, ...rest } = type;
+  if (
+    type.type === "string" ||
+    type.type === "number" ||
+    type.type === "boolean" ||
+    type.type === "date"
+  ) {
+    return type.type;
+  }
 
-  if (Object.keys(rest).length === 0) return typeName;
+  if (type.type === "object") {
+    return `object(${type.objectTypeName})`;
+  }
 
-  return `${typeName}(${JSON.stringify(rest)
-    .replace(/"/g, "")
-    .replace(/^{/g, "")
-    .replace(/}$/g, "")})`;
+  if (type.type === "array") {
+    return `array(${stringifyType(type.valueType)})`;
+  }
+
+  throw new Error(`Unable to stringify type ${JSON.stringify(type)}`);
 }

@@ -8,6 +8,7 @@ import {
   createOrTest,
   createTSTypeForPropertyType,
   createThrowStatement,
+  createTypeExpectationThrow,
   createTypedIdentifier,
   createTypeofTest,
   stringifyType,
@@ -43,9 +44,7 @@ export function createPropertyCheck(
     propertyMember,
     type,
     createAssignment(variable, narrowed),
-    required
-      ? createThrowStatement(`Expected valid ${propertyName}`)
-      : undefined
+    required ? createTypeExpectationThrow(propertyName, type) : undefined
   );
 
   return [variableDecl, ifExp];
@@ -202,7 +201,7 @@ function createArrayNarrowingMap(
     param,
     arrayValueType,
     t.returnStatement(narrowed),
-    createThrowStatement(`Expected valid ${param.name}`)
+    createTypeExpectationThrow(param.name, arrayValueType)
   );
 
   const mapArrowFn = t.arrowFunctionExpression(
