@@ -10,7 +10,7 @@ interface Hello {
   arrayOfArrayofNumbers: number[][];
 }
 
-function parseHello(input: unknown): Hello {
+export function parseHello(input: unknown): Hello {
   if (typeof input !== "object" || input === null) {
     throw new Error("Expected object");
   }
@@ -142,7 +142,7 @@ interface World {
   validDates: Date[];
 }
 
-function parseWorld(input: unknown): World {
+export function parseWorld(input: unknown): World {
   if (typeof input !== "object" || input === null) {
     throw new Error("Expected object");
   }
