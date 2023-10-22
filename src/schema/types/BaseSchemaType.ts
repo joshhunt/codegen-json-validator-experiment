@@ -1,5 +1,5 @@
 import * as t from "@babel/types";
-import { Narrowable, PropertyType } from "../../../types.js";
+import { Narrowable, PropertyType } from "../../types.js";
 
 export default abstract class BaseSchemaType {
   name: string;

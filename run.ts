@@ -1,8 +1,8 @@
 import * as t from "@babel/types";
 import generator from "@babel/generator";
 import * as fs from "fs/promises";
-import _, { Schema } from "./types.js";
-import { formatSourceCode } from "./formatOutput.js";
+import _, { Schema } from "./src/types.js";
+import { formatSourceCode } from "./src/formatOutput.js";
 import { generateFunctionForSchema } from "./generator.js";
 
 const worldSchema: Schema = {

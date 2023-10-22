@@ -75,11 +75,11 @@ export function parseHello(input: unknown): Hello {
 
   let arrayOfNumbers: number[];
   if ("arrayOfNumbers" in input && Array.isArray(input.arrayOfNumbers)) {
-    arrayOfNumbers = input.arrayOfNumbers.map((item: unknown) => {
-      if (typeof item === "number") {
-        return item;
+    arrayOfNumbers = input.arrayOfNumbers.map((arrayOfNumbersItem: unknown) => {
+      if (typeof arrayOfNumbersItem === "number") {
+        return arrayOfNumbersItem;
       } else {
-        throw new Error("Expected item to be a valid number");
+        throw new Error("Expected arrayOfNumbersItem to be a valid number");
       }
     });
   } else {
@@ -88,11 +88,16 @@ export function parseHello(input: unknown): Hello {
 
   let arrayOfObjects: World[];
   if ("arrayOfObjects" in input && Array.isArray(input.arrayOfObjects)) {
-    arrayOfObjects = input.arrayOfObjects.map((item: unknown) => {
-      if (typeof item === "object" && item !== null) {
-        return parseWorld(item);
+    arrayOfObjects = input.arrayOfObjects.map((arrayOfObjectsItem: unknown) => {
+      if (
+        typeof arrayOfObjectsItem === "object" &&
+        arrayOfObjectsItem !== null
+      ) {
+        return parseWorld(arrayOfObjectsItem);
       } else {
-        throw new Error("Expected item to be a valid object(World)");
+        throw new Error(
+          "Expected arrayOfObjectsItem to be a valid object(World)",
+        );
       }
     });
   } else {
@@ -106,19 +111,27 @@ export function parseHello(input: unknown): Hello {
     "arrayOfArrayofNumbers" in input &&
     Array.isArray(input.arrayOfArrayofNumbers)
   ) {
-    arrayOfArrayofNumbers = input.arrayOfArrayofNumbers.map((item: unknown) => {
-      if (Array.isArray(item)) {
-        return item.map((item: unknown) => {
-          if (typeof item === "number") {
-            return item;
-          } else {
-            throw new Error("Expected item to be a valid number");
-          }
-        });
-      } else {
-        throw new Error("Expected item to be a valid array(number)");
-      }
-    });
+    arrayOfArrayofNumbers = input.arrayOfArrayofNumbers.map(
+      (arrayOfArrayofNumbersItem: unknown) => {
+        if (Array.isArray(arrayOfArrayofNumbersItem)) {
+          return arrayOfArrayofNumbersItem.map(
+            (arrayOfArrayofNumbersItemItem: unknown) => {
+              if (typeof arrayOfArrayofNumbersItemItem === "number") {
+                return arrayOfArrayofNumbersItemItem;
+              } else {
+                throw new Error(
+                  "Expected arrayOfArrayofNumbersItemItem to be a valid number",
+                );
+              }
+            },
+          );
+        } else {
+          throw new Error(
+            "Expected arrayOfArrayofNumbersItem to be a valid array(number)",
+          );
+        }
+      },
+    );
   } else {
     throw new Error(
       "Expected arrayOfArrayofNumbers to be a valid array(array(number))",
@@ -179,9 +192,15 @@ export function parseWorld(input: unknown): World {
 
   let validDates: Date[];
   if ("validDates" in input && Array.isArray(input.validDates)) {
-    validDates = input.validDates.map((item: unknown) => {
-      if (typeof item === "string" || item instanceof Date) {
-        const temp = item instanceof Date ? item : new Date(item);
+    validDates = input.validDates.map((validDatesItem: unknown) => {
+      if (
+        typeof validDatesItem === "string" ||
+        validDatesItem instanceof Date
+      ) {
+        const temp =
+          validDatesItem instanceof Date
+            ? validDatesItem
+            : new Date(validDatesItem);
 
         if (!isNaN(temp.getTime())) {
           throw new Error("Expected temp to be a valid date");
@@ -189,7 +208,7 @@ export function parseWorld(input: unknown): World {
 
         return temp;
       } else {
-        throw new Error("Expected item to be a valid date");
+        throw new Error("Expected validDatesItem to be a valid date");
       }
     });
   } else {

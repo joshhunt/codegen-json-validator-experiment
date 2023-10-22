@@ -1,10 +1,10 @@
 import * as t from "@babel/types";
-import { Narrowable, ObjectPropertyType } from "../../../types.js";
+import { Narrowable, ObjectPropertyType } from "../../types.js";
 import {
   createAndAndTest,
   createNullCheck,
   createTypeofTest,
-} from "../../../utils.js";
+} from "../../utils.js";
 import BaseSchemaType from "./BaseSchemaType.js";
 
 export class ObjectSchemaType implements BaseSchemaType {

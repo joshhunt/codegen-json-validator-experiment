@@ -1,5 +1,5 @@
 import * as t from "@babel/types";
-import { PropertyType, Schema, SchemaProperty } from "./types.js";
+import { PropertyType, Schema, SchemaProperty } from "./src/types.js";
 import {
   toValidIdentifier,
   createObjectNarrowingCheck,
@@ -9,8 +9,8 @@ import {
   createFunctionWithUnknownArg,
   createTSTypeForPropertyType,
   stringifyType,
-} from "./utils.js";
-import { createPropertyCheck } from "./propertyChecks.js";
+} from "./src/utils.js";
+import { createPropertyCheck } from "./src/propertyChecks.js";
 
 const INPUT_VARIABLE_NAME = "input";
 

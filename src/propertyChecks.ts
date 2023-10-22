@@ -11,11 +11,11 @@ import {
   createTypeofTest,
   stringifyType,
 } from "./utils.js";
-import { PrimitiveSchemaType } from "./src/schema/types/PrimitiveSchemaType.js";
-import { DateSchemaType } from "./src/schema/types/DateSchemaType.js";
-import { ObjectSchemaType } from "./src/schema/types/ObjectSchemaType.js";
-import { ArraySchemaType } from "./src/schema/types/ArraySchemaType.js";
-import BaseSchemaType from "./src/schema/types/BaseSchemaType.js";
+import { PrimitiveSchemaType } from "./schema/types/PrimitiveSchemaType.js";
+import { DateSchemaType } from "./schema/types/DateSchemaType.js";
+import { ObjectSchemaType } from "./schema/types/ObjectSchemaType.js";
+import { ArraySchemaType } from "./schema/types/ArraySchemaType.js";
+import BaseSchemaType from "./schema/types/BaseSchemaType.js";
 import generate from "@babel/generator";
 
 type Narrowable = t.Identifier | t.MemberExpression;
@@ -110,11 +110,30 @@ function createCast(variable: Narrowable, type: PropertyType) {
   return typeDef.cast(variable);
 }
 
+function getNameIshForNarrowable(variable: Narrowable) {
+  if (variable.type === "Identifier") {
+    return variable.name;
+  }
+
+  const property = variable.property;
+
+  if (property.type === "Identifier") {
+    return property.name;
+  }
+
+  throw new Error(`not implemented for type ${variable.type}`);
+}
+
 export function createArrayNarrowingMap(
   variable: Narrowable,
   arrayValueType: PropertyType
 ) {
-  const param = createTypedIdentifier(`item`, t.tsUnknownKeyword());
+  const variableName = getNameIshForNarrowable(variable);
+
+  const param = createTypedIdentifier(
+    `${variableName}Item`,
+    t.tsUnknownKeyword()
+  );
 
   const typeDef = getTypeDef(arrayValueType);
   let consequent: t.Statement[] = [];

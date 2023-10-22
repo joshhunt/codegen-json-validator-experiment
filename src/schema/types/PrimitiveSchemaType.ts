@@ -1,5 +1,5 @@
-import { Narrowable, PrimitivePropertyType } from "../../../types.js";
-import { createTypeofTest } from "../../../utils.js";
+import { Narrowable, PrimitivePropertyType } from "../../types.js";
+import { createTypeofTest } from "../../utils.js";
 import BaseSchemaType from "./BaseSchemaType.js";
 
 export class PrimitiveSchemaType implements BaseSchemaType {

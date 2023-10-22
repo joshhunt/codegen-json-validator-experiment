@@ -1,10 +1,10 @@
 import * as t from "@babel/types";
-import { DatePropertyType, Narrowable, PropertyType } from "../../../types.js";
+import { DatePropertyType, Narrowable, PropertyType } from "../../types.js";
 import {
   createOrTest,
   createTypeExpectationThrow,
   createTypeofTest,
-} from "../../../utils.js";
+} from "../../utils.js";
 import BaseSchemaType from "./BaseSchemaType.js";
 import generate from "@babel/generator";
 

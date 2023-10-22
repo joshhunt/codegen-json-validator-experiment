@@ -1,9 +1,9 @@
 import * as t from "@babel/types";
-import { ArrayPropertyType, Narrowable } from "../../../types.js";
+import { ArrayPropertyType, Narrowable } from "../../types.js";
 import BaseSchemaType from "./BaseSchemaType.js";
 
 // Note: this creates a circular dependency :/
-import { createArrayNarrowingMap } from "../../../propertyChecks.js";
+import { createArrayNarrowingMap } from "../../propertyChecks.js";
 
 export class ArraySchemaType implements BaseSchemaType {
   type: ArrayPropertyType;
