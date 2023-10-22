@@ -197,16 +197,16 @@ export function parseWorld(input: unknown): World {
         typeof validDatesItem === "string" ||
         validDatesItem instanceof Date
       ) {
-        const temp =
+        const validDatesTemp =
           validDatesItem instanceof Date
             ? validDatesItem
             : new Date(validDatesItem);
 
-        if (!isNaN(temp.getTime())) {
-          throw new Error("Expected temp to be a valid date");
+        if (!isNaN(validDatesTemp.getTime())) {
+          throw new Error("Expected validDatesTemp to be a valid date");
         }
 
-        return temp;
+        return validDatesTemp;
       } else {
         throw new Error("Expected validDatesItem to be a valid date");
       }

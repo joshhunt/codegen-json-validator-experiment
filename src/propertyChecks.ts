@@ -140,7 +140,9 @@ export function createArrayNarrowingMap(
   const castExpr = typeDef.cast(param);
 
   if (typeDef.postCastStatement) {
-    const tempVariable = t.identifier("temp");
+    const variableName = getNameIshForNarrowable(variable);
+    const tempVariable = t.identifier(`${variableName}Temp`);
+
     const variableDecl = t.variableDeclaration("const", [
       t.variableDeclarator(tempVariable, castExpr),
     ]);
